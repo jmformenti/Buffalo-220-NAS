@@ -1,4 +1,4 @@
-# Buffalo 220 NAS
+# Buffalo LS-WXL NAS
 
 This document briefly describes how to install NFS on your buffalo device,
 along with how to get remote root access, via SSH.
@@ -6,9 +6,9 @@ along with how to get remote root access, via SSH.
 There are two systems involved here:
 
 * My desktop system - which will mount the exports.
-  * `10.0.0.10`
+  * `192.168.1.160`
 * The NAS device itself.
-  * `10.0.0.108`
+  * `192.168.1.4`
 
 
 # Get Root
@@ -19,18 +19,23 @@ Using `acp_commander.jar` you can execute arbitrary commands on the NAS, as `roo
 
 Add your details to the [nas](nas) script, then execute it like so:
 
-    ./nas uptime
-    Using random connID value = 6F10567B8986
-    Using target:	10.0.0.108/10.0.0.108
+    Using random connID value = 83E20F6293D2
+    Using MAC: 106f3fe44e46
+    Using target:	192.168.1.4/192.168.1.4
     Starting authentication procedure...
-    Sending Discover packet...
-    Found:	LS220DE37E (/10.0.0.108) 	LS220DE(GOICHIJO) (ID=004814) 	mac: 88:57:EE:4A:73:7E	Firmware=  1.650	Key=5E889F5B
+    Sending Discover packet...	
+    Found:	kinton (/192.168.1.4) 	LS-WXL(KEITAI) (ID=00486) 	mac:     10:6F:3F:E4:4E:46	Firmware=  1.740	Key=2DFEBB60
     Trying to authenticate EnOneCmd...	ACP_STATE_OK
     Trying to authenticate with admin password...	ACP_STATE_OK
-    >uptime
-     18:39:10 up 2 days,  5:27,  0 users,  load average: 0.13, 0.14, 0.14
+    > uptime
+     21:25:59 up 2 min, load average: 1.28, 0.77, 0.30
 
-Assuming this works for you then you can now examine the get-root script which will run a couple of commands:
+    Changeing IP:	ACP_STATE_PASSWORD_ERROR
+
+    Please note, that the current support for the change of the IP is currently very rudimentary.
+    The IP has been set to the given, fixed IP. However DNS and gateway have not been set. Use the WebGUI to make appropriate settings.
+
+Although in the end it fails, the command was able to run successfully. You can now examine the get-root script which will run a couple of commands:
 
 * [root.sh](root.sh)
   * Change the `root` password to `ssh.pass`.
@@ -42,34 +47,67 @@ Assuming this works for you then you can now examine the get-root script which w
 Once you have root you can login to your NAS via SSH and run commands
 interactively, as you'd expect:
 
-    deagol ~ $ ssh root@10.0.108
-    root@10.0.108's password:
+    $ ssh -o PreferredAuthentications=password root@192.168.1.4
+    root@192.168.1.4's password:
 
 >**REMEMBER**: The `root.sh` script will have set the ssh-password to be `ssh.pass`.
+>**NOTE**: The `PreferredAuthentications` option is needed to prevent keyboard-interactive authentication. 
 
-    [root@LS220DE37E ~]# uptime
-     15:24:32 up 1 day,  2:12,  1 user,  load average: 0.20, 0.18, 0.70
+    [root@kinton ~]# uptime
+     21:35:37 up 12 min, load average: 0.16, 0.29, 0.28
 
-    [root@LS220DE37E ~]# free -m
-                 total       used       free     shared    buffers     cached
-    Mem:           242        158         83          0         38         69
-    -/+ buffers/cache:         51        190
-    Swap:          975          0        975
+    [root@kinton ~]# free
+                  total         used         free       shared      buffers
+     Mem:        117560        96772        20788            0         5424
+     Swap:      1000432          500       999932
+     Total:     1117992        97272      1020720
 
-    [root@LS220DE37E ~]# uname -r
-    3.3.4
+    [root@kinton ~]# uname -r
+    3.3.4-88f6281
 
-    [root@LS220DE37E ~]# cat /proc/mdstat
-    Personalities : [linear] [raid0] [raid1] [raid10] [raid6] [raid5] [raid4]
-    md10 : active raid1 sda6[0] sdb6[1]
-      2914744128 blocks super 1.2 [2/2] [UU]
-      bitmap: 0/22 pages [0KB], 65536KB chunk
-    md0 : active raid1 sda1[0] sdb1[1]
-      999872 blocks [2/2] [UU]
+    [root@kinton ~]# cat /proc/mdstat
+    Personalities : [linear] [raid0] [raid1] [raid6] [raid5] [raid4] 
+    md2 : active raid1 sda6[0] sdb6[1]
+              1938311340 blocks super 1.2 [2/2] [UU]
+      
     md1 : active raid1 sda2[0] sdb2[1]
-      4995008 blocks super 1.2 [2/2] [UU]
-    md2 : active raid1 sda5[0] sdb5[1]
-      999424 blocks super 1.2 [2/2] [UU]
+              4999156 blocks super 1.2 [2/2] [UU]
+      
+    md10 : active raid1 sda5[0] sdb5[1]
+              1000436 blocks super 1.2 [2/2] [UU]
+      
+    md0 : active raid1 sda1[0] sdb1[1]
+              1000384 blocks [2/2] [UU]
+      
+    unused devices: <none>
+
+
+## Troubleshooting getting root
+
+Check in `/etc/sshd_config` that exists only one parameter `PermitRootLogin`:
+
+    [root@kinton ~]# cat /etc/sshd_config  | grep PermitRootLogin
+
+In case exists two parameters, only keep `PermitRootLogin yes`.
+
+Check if dns is configured:
+
+    [root@kinton ~]# cat /etc/resolf.conf
+
+If is empty, fill with dns servers, for example with [OpenDNS](https://www.opendns.com/):
+
+    [root@kinton ~]# cat /etc/resolf.conf
+    nameserver 208.67.222.222
+    nameserver 208.67.220.220
+
+Check date/time is correct:
+
+    [root@kinton ~]# date
+    Sat Dec 26 21:51:15 CET 2020
+
+If it's not correct, update with:
+
+    [root@kinton ~]# ntpdate -s -b ntp.jst.mfeed.ad.jp
 
 
 ## Install ipkg
@@ -86,7 +124,7 @@ The `.xsh` script will boosttrap the system, by unpackaging a binary-archive emb
 
 To view the contents of the archive you can run this:
 
-    # dd if=lspro-bootstrap_1.2-7_arm.xsh bs=201 skip=1 2>/dev/null| tar zt
+    # dd if=lspro-bootstrap_1.2-7_arm.xsh bs=201 skip=1 2>/dev/null| tar xz
     bootstrap/
     bootstrap/bootstrap.sh
     bootstrap/ipkg-opt.ipk
@@ -96,8 +134,18 @@ To view the contents of the archive you can run this:
 
 **NOTE**: Use `.. | tar xf` if you wish to unpack locally and read what will be executed.
 
-Ultimately when `./bootstrap/bootstrap.sh` is executed it will install the two bundled `.ipkg` files (giving `ipkg` itself, and `wget` which is used to download packages), and configure `ipkg`.
+When `./bootstrap/bootstrap.sh` is executed it will install the two bundled `.ipkg` files (giving `ipkg` itself, and `wget` which is used to download packages), and configure `ipkg`.
 
+Once installed, configure variable `REAL_OPT_DIR` in `/etc/init.d/rc.optware` script with persistent directory created with ipkg installation, in my case `/mnt/array1/.optware`:
+
+    [root@kinton ~]# cat /etc/init.d/rc.optware
+    #! /bin/sh
+
+    if test -z "${REAL_OPT_DIR}"; then
+    # next line to be replaced according to OPTWARE_TARGET
+    REAL_OPT_DIR=/mnt/array1/.optware
+    fi
+    ....
 
 ## Install NFS
 
@@ -114,9 +162,8 @@ To get the (user-space) NFS-server you'll run:
 To configure your exports you need to edit the configuration file
 `/opt/etc/exports`.  My example is this:
 
-    /mnt/array1/backups 10.0.0.10(rw,sync)
-    /mnt/array1/films   10.0.0.10(rw,sync)
-    /mnt/array1/tv      10.0.0.10(rw,sync)
+    /mnt/array1/backup	192.168.1.2(rw,sync,anonuid=1001,anongid=100)
+    /mnt/array1/shared	192.168.1.2(rw,sync,anonuid=1001,anongid=100)
 
 Once that file has been updated you'll need to restart NFS:
 
@@ -125,31 +172,46 @@ Once that file has been updated you'll need to restart NFS:
 
 **NOTE**: We're explicitly installing the __user-space__ NFS server here.  My first attempt involved using the kernel-mode NFS server, via a third-party repository.  This failed to boot, effectively bricking the device neatly.  Recovering from that was a real pain, and something I have no wish to repeat!  (You need a third-party kernel because the default kernel contains zero NFS-modules.  Also doesn't contain a kernel `.config` file either.)
 
+## Troubleshooting with NFS
+
+If NFS service is not started automatically when boots, add a last sleep line in `/opt/etc/init.d/S56nfsd`:
+
+    root@kinton:/# cat /opt/etc/init.d/S56nfsd 
+    #!/bin/sh
+
+    if [ -n "`pidof rpc.nfsd`" ] ; then
+        killall rpc.nfsd 2>/dev/null
+    fi
+    if [ -n "`pidof rpc.mountd`" ] ; then
+        killall  rpc.mountd 2>/dev/null
+    fi
+
+    sleep 2
+    /opt/sbin/rpc.nfsd  -f /opt/etc/exports
+    /opt/sbin/rpc.mountd  -f /opt/etc/exports
+
+    # If you no wait, the processes die
+    sleep 5
 
 ## Testing NFS
 
-From a local system in your LAN, with IP `10.0.0.10`, you should now
+From a local system in your LAN, with IP `192.168.1.160`, you should now
 be able to list those exports:
 
-    root@deagol:~# showmount -e 10.0.0.108
-    Export list for 10.0.0.108:
-    /mnt/array1/tv      10.0.0.10
-    /mnt/array1/films   10.0.0.10
-    /mnt/array1/backups 10.0.0.10
-
+    root@192.168.1.160:~# showmount -e 192.168.1.4
+    Export list for 192.168.1.4:
+    /mnt/array1/nas/backup/rsnapshot 192.168.1.2,/
+    /mnt/array1/nas                  192.168.1.2
 
 ## Mounting NFS Shares
 
-This is what I did to mount the shares on my desktop:
+This is what I did to mount the shares on 192.168.1.2:
 
-    mkdir /srv/films
-    mount  -t nfs -o vers=2 10.0.0.108:/mnt/array1/films /srv/films
+    mkdir /mnt/shared
+    mount  -t nfs -o vers=2 192.168.1.4:/mnt/array1/shared /mnt/shared
 
-    mkdir /srv/tv
-    mount  -t nfs -o vers=2 10.0.0.108:/mnt/array1/tv /srv/tv
-
-    mkdir /srv/backups
-    mount  -t nfs -o vers=2 10.0.0.108:/mnt/array1/backups /srv/backups
-
+    mkdir /mnt/backup
+    mount  -t nfs -o vers=2 192.168.1.4:/mnt/array1/backup /mnt/backup
 
 All done.
+
