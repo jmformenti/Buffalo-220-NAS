@@ -11,7 +11,7 @@ There are two systems involved here:
   * `192.168.1.4`
 
 
-# Get Root
+## Get Root
 
 To get root on the device you can use the bundled `acp_commander.jar` command - of course you'll need a Java installation to do that.
 
