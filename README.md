@@ -51,6 +51,7 @@ interactively, as you'd expect:
     root@192.168.1.4's password:
 
 >**REMEMBER**: The `root.sh` script will have set the ssh-password to be `ssh.pass`.
+
 >**NOTE**: The `PreferredAuthentications` option is needed to prevent keyboard-interactive authentication. 
 
     [root@kinton ~]# uptime
@@ -132,7 +133,7 @@ To view the contents of the archive you can run this:
     bootstrap/optware-bootstrap.ipk
     bootstrap/wget.ipk
 
-**NOTE**: Use `.. | tar xf` if you wish to unpack locally and read what will be executed.
+> **NOTE**: Use `.. | tar xf` if you wish to unpack locally and read what will be executed.
 
 When `./bootstrap/bootstrap.sh` is executed it will install the two bundled `.ipkg` files (giving `ipkg` itself, and `wget` which is used to download packages), and configure `ipkg`.
 
@@ -170,7 +171,7 @@ Once that file has been updated you'll need to restart NFS:
     /opt/etc/init.d/*nfs* stop
     /opt/etc/init.d/*nfs* start
 
-**NOTE**: We're explicitly installing the __user-space__ NFS server here.  My first attempt involved using the kernel-mode NFS server, via a third-party repository.  This failed to boot, effectively bricking the device neatly.  Recovering from that was a real pain, and something I have no wish to repeat!  (You need a third-party kernel because the default kernel contains zero NFS-modules.  Also doesn't contain a kernel `.config` file either.)
+>**NOTE**: We're explicitly installing the __user-space__ NFS server here.  My first attempt involved using the kernel-mode NFS server, via a third-party repository.  This failed to boot, effectively bricking the device neatly.  Recovering from that was a real pain, and something I have no wish to repeat!  (You need a third-party kernel because the default kernel contains zero NFS-modules.  Also doesn't contain a kernel `.config` file either.)
 
 ## Troubleshooting with NFS
 
