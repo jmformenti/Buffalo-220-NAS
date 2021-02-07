@@ -158,7 +158,7 @@ Once you have `ipkg`, the package-manager, installed you can install things via:
 To get the (user-space) NFS-server you'll run:
 
     # ipkg update
-    # ipkg install nfs-server
+    # ipkg install unfs3
 
 To configure your exports you need to edit the configuration file
 `/opt/etc/exports`.  My example is this:
@@ -168,28 +168,25 @@ To configure your exports you need to edit the configuration file
 
 Once that file has been updated you'll need to restart NFS:
 
-    /opt/etc/init.d/*nfs* stop
-    /opt/etc/init.d/*nfs* start
+    /opt/etc/init.d/S56unfsd stop
+    /opt/etc/init.d/S56unfsd start
 
 >**NOTE**: We're explicitly installing the __user-space__ NFS server here.  My first attempt involved using the kernel-mode NFS server, via a third-party repository.  This failed to boot, effectively bricking the device neatly.  Recovering from that was a real pain, and something I have no wish to repeat!  (You need a third-party kernel because the default kernel contains zero NFS-modules.  Also doesn't contain a kernel `.config` file either.)
+>**NOTE2**: Instead of unfsd3 you can install nfs-server, the main difference is that nfs-server implements NFS protocol version 2 which has a limitation to manage files until 2GB. The unfsd3 implements NFS protocol version 3.
 
 ## Troubleshooting with NFS
 
-If NFS service is not started automatically when boots, add a last sleep line in `/opt/etc/init.d/S56nfsd`:
+If NFS service is not started automatically when boots, add a last sleep line in `/opt/etc/init.d/S56unfsd`:
 
-    root@kinton:/# cat /opt/etc/init.d/S56nfsd 
+    root@kinton:/# cat /opt/etc/init.d/S56unfsd 
     #!/bin/sh
 
-    if [ -n "`pidof rpc.nfsd`" ] ; then
-        killall rpc.nfsd 2>/dev/null
-    fi
-    if [ -n "`pidof rpc.mountd`" ] ; then
-        killall  rpc.mountd 2>/dev/null
+    if [ -n "`pidof unfsd`" ] ; then
+        killall unfsd 2>/dev/null
     fi
 
     sleep 2
-    /opt/sbin/rpc.nfsd  -f /opt/etc/exports
-    /opt/sbin/rpc.mountd  -f /opt/etc/exports
+    /opt/sbin/unfsd -e /opt/etc/exports
 
     # If you no wait, the processes die
     sleep 5
@@ -201,18 +198,18 @@ be able to list those exports:
 
     root@192.168.1.160:~# showmount -e 192.168.1.4
     Export list for 192.168.1.4:
-    /mnt/array1/nas/backup/rsnapshot 192.168.1.2,/
-    /mnt/array1/nas                  192.168.1.2
+    /mnt/array1/shared 192.168.1.2
+    /mnt/array1/backup 192.168.1.2
 
 ## Mounting NFS Shares
 
 This is what I did to mount the shares on 192.168.1.2:
 
     mkdir /mnt/shared
-    mount  -t nfs -o vers=2 192.168.1.4:/mnt/array1/shared /mnt/shared
+    mount  -t nfs 192.168.1.4:/mnt/array1/shared /mnt/shared
 
     mkdir /mnt/backup
-    mount  -t nfs -o vers=2 192.168.1.4:/mnt/array1/backup /mnt/backup
+    mount  -t nfs 192.168.1.4:/mnt/array1/backup /mnt/backup
 
 All done.
 
