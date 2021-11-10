@@ -47,7 +47,7 @@ Although in the end it fails, the command was able to run successfully. You can 
 Once you have root you can login to your NAS via SSH and run commands
 interactively, as you'd expect:
 
-    $ ssh -o PreferredAuthentications=password root@192.168.1.4
+    $ ssh -o PreferredAuthentications=password -oKexAlgorithms=+diffie-hellman-group1-sha1 root@192.168.1.4
     root@192.168.1.4's password:
 
 >**REMEMBER**: The `root.sh` script will have set the ssh-password to be `ssh.pass`.
